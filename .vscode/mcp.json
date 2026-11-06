@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=uvilpdyblxpixsrobepn&features=database,docs,functions,storage,auth,extensions,graphql,api,settings,logs",    
+    }
+  }
+}
