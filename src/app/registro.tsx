@@ -14,15 +14,8 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '../contexts/auth-context';
+import { FACULTIES } from '../constants/catalogs';
 import { registerUser } from '../database';
-
-const FACULTIES = [
-  'Facultad de Ciencias de la Computación',
-  'Facultad de Ingeniería',
-  'Facultad de Ciencias Físico Matemáticas',
-  'Facultad de Administración',
-  'Otra facultad o unidad académica',
-];
 
 export default function RegistroScreen() {
   const [nombre, setNombre] = useState('');

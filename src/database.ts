@@ -1,4 +1,5 @@
 import * as Crypto from 'expo-crypto';
+import { File, Paths } from 'expo-file-system';
 import * as SQLite from 'expo-sqlite';
 
 export type LocalUser = {
@@ -40,6 +41,63 @@ function createId() {
 
 async function hashPassword(password: string) {
   return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, password);
+}
+
+async function persistImageUri(uri: string, objectId: string) {
+  if (!uri || uri.startsWith(Paths.document.uri) || uri.startsWith('http')) {
+    return uri;
+  }
+
+  const source = new File(uri);
+  if (!source.exists) {
+    throw new Error('La imagen seleccionada ya no está disponible. Selecciona otra imagen.');
+  }
+
+  const extension = uri.split('?')[0].match(/\.([a-zA-Z0-9]+)$/)?.[1] ?? 'jpg';
+  const destination = new File(Paths.document, `objeto-${objectId}.${extension}`);
+  await source.copy(destination, { overwrite: true });
+  return destination.uri;
+}
+
+async function migrateCachedImages(database: SQLite.SQLiteDatabase) {
+  const objects = await database.getAllAsync<{ id: string; imagen_url: string }>(
+    "SELECT id, imagen_url FROM objetos WHERE imagen_url != ''"
+  );
+
+  for (const object of objects) {
+    if (!object.imagen_url.startsWith('file://') || object.imagen_url.startsWith(Paths.document.uri)) {
+      continue;
+    }
+
+    try {
+      const persistedUri = await persistImageUri(object.imagen_url, object.id);
+      if (persistedUri !== object.imagen_url) {
+        await database.runAsync(
+          'UPDATE objetos SET imagen_url = ? WHERE id = ?',
+          persistedUri,
+          object.id
+        );
+      }
+    } catch {
+      await database.runAsync(
+        "UPDATE objetos SET imagen_url = '' WHERE id = ? AND imagen_url = ?",
+        object.id,
+        object.imagen_url
+      );
+    }
+  }
+}
+
+async function normalizeCategories(database: SQLite.SQLiteDatabase) {
+  await database.runAsync(
+    `UPDATE objetos
+     SET categoria = CASE categoria
+       WHEN 'Credencial' THEN 'Credenciales'
+       WHEN 'Electrónica' THEN 'Electrónicos'
+       ELSE categoria
+     END
+     WHERE categoria IN ('Credencial', 'Electrónica')`
+  );
 }
 
 export function getDatabase() {
@@ -92,6 +150,8 @@ export function getDatabase() {
         }
       }
 
+      await normalizeCategories(database);
+      await migrateCachedImages(database);
       return database;
     });
   }
@@ -152,11 +212,13 @@ export async function initializeDatabase() {
 
 export async function createObject(object: NewObject) {
   const database = await getDatabase();
+  const id = createId();
+  const imagenUri = await persistImageUri(object.imagen_url, id);
   await database.runAsync(
     `INSERT INTO objetos
       (id, titulo, descripcion, categoria, tipo_aviso, facultad, lugar, fecha_suceso, contacto, imagen_url, estado, usuario_id)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    createId(),
+    id,
     object.titulo.trim(),
     object.descripcion.trim(),
     object.categoria.trim(),
@@ -165,7 +227,7 @@ export async function createObject(object: NewObject) {
     object.lugar.trim(),
     object.fecha_suceso,
     object.contacto.trim(),
-    object.imagen_url,
+    imagenUri,
     object.estado ?? 'pendiente',
     object.usuario_id
   );
@@ -181,6 +243,7 @@ export async function getObjectById(id: string) {
 
 export async function updateObject(id: string, userId: string, object: NewObject) {
   const database = await getDatabase();
+  const imagenUri = await persistImageUri(object.imagen_url, id);
   const result = await database.runAsync(
     `UPDATE objetos
      SET titulo = ?, descripcion = ?, categoria = ?, tipo_aviso = ?, facultad = ?,
@@ -194,7 +257,7 @@ export async function updateObject(id: string, userId: string, object: NewObject
     object.lugar.trim(),
     object.fecha_suceso,
     object.contacto.trim(),
-    object.imagen_url,
+    imagenUri,
     object.estado ?? 'pendiente',
     id,
     userId

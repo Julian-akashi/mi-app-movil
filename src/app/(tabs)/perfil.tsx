@@ -110,7 +110,6 @@ export default function PerfilScreen() {
         <View style={styles.impactCard}>
           <View style={styles.impactHeader}>
             <Text style={styles.impactTitle}>Impacto en la comunidad{'\n'}campus</Text>
-            <Text style={styles.semester}>Actividad local</Text>
           </View>
           <View style={styles.metrics}>
             <Metric value={loading ? '—' : String(stats.published)} label="Avisos publicados" color="#071a2f" />

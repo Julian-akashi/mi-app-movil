@@ -16,16 +16,10 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '../contexts/auth-context';
+import { CATEGORIES, FACULTIES } from '../constants/catalogs';
 import { createObject, getObjectById, updateObject } from '../database';
 
-const CATEGORIES = ['Credencial', 'Llaves', 'Electrónica', 'Accesorios', 'Ropa', 'Otro'];
 const STATES = ['pendiente', 'recuperado', 'cerrado'];
-const FACULTIES = [
-  'Facultad de Ciencias de la Computación',
-  'Facultad de Ingeniería',
-  'Facultad de Administración',
-  'Otra facultad o unidad académica',
-];
 
 export default function CrearObjetoScreen() {
   const [tipoAviso, setTipoAviso] = useState<'perdi' | 'encontre'>('perdi');

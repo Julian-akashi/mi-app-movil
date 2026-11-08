@@ -5,6 +5,7 @@ import {
   Alert,
   FlatList,
   Image,
+  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -12,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '../../contexts/auth-context';
+import { CATEGORIES, FACULTIES } from '../../constants/catalogs';
 import { deleteObject, getDatabase } from '../../database';
 
 type ObjectRecord = {
@@ -28,14 +30,27 @@ type ObjectRecord = {
 };
 
 type StatusFilter = 'todos' | 'perdidos' | 'encontrados';
+type TimeFilter = 'todo' | 'dia' | 'semana' | 'mes' | 'tres_meses';
 
-const CATEGORIES = ['Todas', 'Credenciales', 'Electrónicos', 'Llaves', 'Accesorios'];
+const PAGE_SIZE = 4;
+const TIME_FILTERS: { label: string; value: TimeFilter }[] = [
+  { label: 'Todo el tiempo', value: 'todo' },
+  { label: 'Últimas 24 horas', value: 'dia' },
+  { label: 'Últimos 7 días', value: 'semana' },
+  { label: 'Últimos 30 días', value: 'mes' },
+  { label: 'Últimos 3 meses', value: 'tres_meses' },
+];
 
 export default function HomeScreen() {
   const [objetos, setObjetos] = useState<ObjectRecord[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('todos');
   const [categoryFilter, setCategoryFilter] = useState('Todas');
+  const [facultyFilter, setFacultyFilter] = useState('Todas las facultades');
+  const [facultySelectorVisible, setFacultySelectorVisible] = useState(false);
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('todo');
+  const [timeSelectorVisible, setTimeSelectorVisible] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const { session } = useAuth();
   const router = useRouter();
@@ -48,6 +63,7 @@ export default function HomeScreen() {
         'SELECT id, titulo, categoria, tipo_aviso, facultad, lugar, estado, imagen_url, created_at FROM objetos ORDER BY datetime(created_at) DESC'
       );
       setObjetos(data);
+      setCurrentPage(1);
     } catch (error) {
       console.error('Error al cargar objetos locales:', error);
       Alert.alert('No se pudieron cargar los avisos', 'Intenta nuevamente en unos momentos.');
@@ -71,13 +87,23 @@ export default function HomeScreen() {
         (statusFilter === 'perdidos' && item.tipo_aviso === 'perdi') ||
         (statusFilter === 'encontrados' && item.tipo_aviso === 'encontre');
       const matchesCategory = categoryFilter === 'Todas' || item.categoria === categoryFilter;
+      const matchesFaculty =
+        facultyFilter === 'Todas las facultades' || item.facultad === facultyFilter;
+      const matchesTime = matchesTimeFilter(item.created_at, timeFilter);
       const matchesSearch =
         !normalizedSearch ||
         `${item.titulo} ${item.categoria} ${item.facultad} ${item.lugar}`.toLowerCase().includes(normalizedSearch);
 
-      return matchesStatus && matchesCategory && matchesSearch;
+      return matchesStatus && matchesCategory && matchesFaculty && matchesTime && matchesSearch;
     });
-  }, [categoryFilter, objetos, search, statusFilter]);
+  }, [categoryFilter, facultyFilter, objetos, search, statusFilter, timeFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(objetosFiltrados.length / PAGE_SIZE));
+  const visiblePage = Math.min(currentPage, totalPages);
+  const objetosDePagina = objetosFiltrados.slice(
+    (visiblePage - 1) * PAGE_SIZE,
+    visiblePage * PAGE_SIZE
+  );
 
   const eliminarAviso = (item: ObjectRecord) => {
     if (!session || item.usuario_id !== session.id) {
@@ -114,7 +140,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.screen}>
       <FlatList
-        data={objetosFiltrados}
+        data={objetosDePagina}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
@@ -147,7 +173,10 @@ export default function HomeScreen() {
                 <TextInput
                   style={styles.searchInput}
                   value={search}
-                  onChangeText={setSearch}
+                  onChangeText={(value) => {
+                    setSearch(value);
+                    setCurrentPage(1);
+                  }}
                   placeholder="Buscar por nombre o palabra clave"
                   placeholderTextColor="#7d8490"
                   returnKeyType="search"
@@ -160,38 +189,54 @@ export default function HomeScreen() {
                 label="Todos"
                 count={objetos.length}
                 selected={statusFilter === 'todos'}
-                onPress={() => setStatusFilter('todos')}
+                onPress={() => {
+                  setStatusFilter('todos');
+                  setCurrentPage(1);
+                }}
               />
               <StatusTab
                 label="Perdidos"
                 count={objetos.filter((item) => item.tipo_aviso === 'perdi').length}
                 selected={statusFilter === 'perdidos'}
-                onPress={() => setStatusFilter('perdidos')}
+                onPress={() => {
+                  setStatusFilter('perdidos');
+                  setCurrentPage(1);
+                }}
               />
               <StatusTab
                 label="Encontrados"
                 count={objetos.filter((item) => item.tipo_aviso === 'encontre').length}
                 selected={statusFilter === 'encontrados'}
-                onPress={() => setStatusFilter('encontrados')}
+                onPress={() => {
+                  setStatusFilter('encontrados');
+                  setCurrentPage(1);
+                }}
               />
             </View>
 
-            <View style={styles.facultyFilter}>
+            <Pressable
+              style={styles.facultyFilter}
+              onPress={() => setFacultySelectorVisible(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Filtrar por facultad">
               <Text style={styles.locationIcon}>⌖</Text>
-              <Text style={styles.facultyText}>Todas las facultades</Text>
+              <Text style={styles.facultyText}>{facultyFilter}</Text>
               <Text style={styles.chevron}>⌄</Text>
-            </View>
+            </Pressable>
 
             <FlatList
               horizontal
-              data={CATEGORIES}
+              data={['Todas', ...CATEGORIES]}
               keyExtractor={(item) => item}
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.categoryList}
               renderItem={({ item }) => (
                 <Pressable
                   style={[styles.categoryChip, categoryFilter === item && styles.categoryChipSelected]}
-                  onPress={() => setCategoryFilter(item)}>
+                  onPress={() => {
+                    setCategoryFilter(item);
+                    setCurrentPage(1);
+                  }}>
                   <Text style={[styles.categoryText, categoryFilter === item && styles.categoryTextSelected]}>
                     {item}
                   </Text>
@@ -201,11 +246,18 @@ export default function HomeScreen() {
 
             <View style={styles.sectionHeader}>
               <View>
-                <Text style={styles.sectionTitle}>Avisos recientes en</Text>
-                <Text style={styles.sectionTitle}>Campus</Text>
+                <Text style={styles.sectionTitle}>Avisos recientes</Text>
               </View>
-              <Text style={styles.resultCount}>{objetosFiltrados.length} activos</Text>
-              <Text style={styles.sortText}>↕ Más{'\n'}recientes</Text>
+              <View style={styles.sectionActions}>
+                <Text style={styles.resultCount}>{objetosFiltrados.length} activos</Text>
+                <Pressable
+                  style={styles.sortButton}
+                  onPress={() => setTimeSelectorVisible(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Filtrar por fecha">
+                  <Text style={styles.sortText} numberOfLines={1}>↕ {getTimeFilterLabel(timeFilter)}</Text>
+                </Pressable>
+              </View>
             </View>
           </>
         }
@@ -219,9 +271,125 @@ export default function HomeScreen() {
           />
         )}
         ListEmptyComponent={<Text style={styles.emptyText}>No hay avisos que coincidan con tu búsqueda.</Text>}
+        ListFooterComponent={
+          objetosFiltrados.length > 0 && totalPages > 1 ? (
+            <View style={styles.pagination}>
+              <Pressable
+                style={[styles.pageButton, visiblePage === 1 && styles.pageButtonDisabled]}
+                disabled={visiblePage === 1}
+                onPress={() => setCurrentPage((page) => Math.max(1, page - 1))}>
+                <Text style={styles.pageButtonText}>‹ Anterior</Text>
+              </Pressable>
+              <Text style={styles.pageText}>Página {visiblePage} de {totalPages}</Text>
+              <Pressable
+                style={[styles.pageButton, visiblePage === totalPages && styles.pageButtonDisabled]}
+                disabled={visiblePage === totalPages}
+                onPress={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}>
+                <Text style={styles.pageButtonText}>Siguiente ›</Text>
+              </Pressable>
+            </View>
+          ) : undefined
+        }
       />
+      <Modal
+        visible={facultySelectorVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setFacultySelectorVisible(false)}>
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setFacultySelectorVisible(false)}>
+          <Pressable style={styles.facultyModal} onPress={(event) => event.stopPropagation()}>
+            <Text style={styles.modalTitle}>Filtrar por facultad</Text>
+            {['Todas las facultades', ...FACULTIES].map((faculty) => (
+              <Pressable
+                key={faculty}
+                style={styles.facultyOption}
+                onPress={() => {
+                  setFacultyFilter(faculty);
+                  setCurrentPage(1);
+                  setFacultySelectorVisible(false);
+                }}>
+                <Text style={styles.facultyOptionText}>{faculty}</Text>
+                {facultyFilter === faculty && <Text style={styles.selectedMark}>✓</Text>}
+              </Pressable>
+            ))}
+            <Pressable
+              style={styles.cancelButton}
+              onPress={() => setFacultySelectorVisible(false)}>
+              <Text style={styles.cancelButtonText}>Cancelar</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+      <Modal
+        visible={timeSelectorVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setTimeSelectorVisible(false)}>
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setTimeSelectorVisible(false)}>
+          <Pressable style={styles.facultyModal} onPress={(event) => event.stopPropagation()}>
+            <Text style={styles.modalTitle}>Filtrar por fecha</Text>
+            {TIME_FILTERS.map((option) => (
+              <Pressable
+                key={option.value}
+                style={styles.facultyOption}
+                onPress={() => {
+                  setTimeFilter(option.value);
+                  setCurrentPage(1);
+                  setTimeSelectorVisible(false);
+                }}>
+                <Text style={styles.facultyOptionText}>{option.label}</Text>
+                {timeFilter === option.value && <Text style={styles.selectedMark}>✓</Text>}
+              </Pressable>
+            ))}
+            <Pressable
+              style={styles.cancelButton}
+              onPress={() => setTimeSelectorVisible(false)}>
+              <Text style={styles.cancelButtonText}>Cancelar</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
+}
+
+function matchesTimeFilter(createdAt: string, filter: TimeFilter) {
+  if (filter === 'todo') {
+    return true;
+  }
+
+  const createdTime = new Date(createdAt).getTime();
+  if (Number.isNaN(createdTime)) {
+    return false;
+  }
+
+  const durations: Record<Exclude<TimeFilter, 'todo'>, number> = {
+    dia: 24 * 60 * 60 * 1000,
+    semana: 7 * 24 * 60 * 60 * 1000,
+    mes: 30 * 24 * 60 * 60 * 1000,
+    tres_meses: 90 * 24 * 60 * 60 * 1000,
+  };
+
+  return createdTime >= Date.now() - durations[filter];
+}
+
+function getTimeFilterLabel(filter: TimeFilter) {
+  if (filter === 'todo') {
+    return 'Más recientes';
+  }
+
+  const compactLabels: Record<Exclude<TimeFilter, 'todo'>, string> = {
+    dia: '24 horas',
+    semana: '7 días',
+    mes: '30 días',
+    tres_meses: '3 meses',
+  };
+
+  return compactLabels[filter] ?? 'Más recientes';
 }
 
 function StatusTab({
@@ -349,15 +517,30 @@ const styles = StyleSheet.create({
   locationIcon: { color: '#082a4e', fontSize: 22, marginRight: 9 },
   facultyText: { color: '#082a4e', flex: 1, fontSize: 15, fontWeight: '600' },
   chevron: { color: '#082a4e', fontSize: 22 },
+  modalBackdrop: { backgroundColor: 'rgba(7, 26, 47, 0.45)', flex: 1, justifyContent: 'flex-end' },
+  facultyModal: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20 },
+  modalTitle: { color: '#071a2f', fontSize: 20, fontWeight: '700', marginBottom: 8 },
+  facultyOption: { alignItems: 'center', borderBottomColor: '#edf0f2', borderBottomWidth: 1, flexDirection: 'row', minHeight: 52, paddingVertical: 10 },
+  facultyOptionText: { color: '#273442', flex: 1, fontSize: 15 },
+  selectedMark: { color: '#0b466d', fontSize: 20, fontWeight: '700' },
+  cancelButton: { alignItems: 'center', backgroundColor: '#e9eef2', borderRadius: 14, marginTop: 16, paddingVertical: 13 },
+  cancelButtonText: { color: '#0b466d', fontSize: 15, fontWeight: '700' },
+  pagination: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginTop: 4, paddingVertical: 8 },
+  pageButton: { backgroundColor: '#0b466d', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9 },
+  pageButtonDisabled: { backgroundColor: '#b8c5ce' },
+  pageButtonText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  pageText: { color: '#526575', fontSize: 13, fontWeight: '600' },
   categoryList: { gap: 10, paddingVertical: 13 },
   categoryChip: { backgroundColor: '#fff', borderColor: '#dde3e8', borderRadius: 22, borderWidth: 1, paddingHorizontal: 18, paddingVertical: 10 },
   categoryChipSelected: { backgroundColor: '#0b466d', borderColor: '#0b466d' },
   categoryText: { color: '#273442', fontSize: 14 },
   categoryTextSelected: { color: '#fff', fontWeight: '700' },
   sectionHeader: { alignItems: 'center', flexDirection: 'row', marginBottom: 14, marginTop: 8 },
-  sectionTitle: { color: '#071a2f', fontSize: 20, fontWeight: '700' },
-  resultCount: { backgroundColor: '#dce8f1', borderRadius: 19, color: '#082a4e', fontSize: 14, fontWeight: '700', marginLeft: 'auto', paddingHorizontal: 13, paddingVertical: 8 },
-  sortText: { color: '#68727e', fontSize: 14, marginLeft: 10 },
+  sectionTitle: { color: '#071a2f', flex: 1, fontSize: 20, fontWeight: '700' },
+  sectionActions: { alignItems: 'center', flexDirection: 'row', gap: 8 },
+  resultCount: { backgroundColor: '#dce8f1', borderRadius: 19, color: '#082a4e', fontSize: 14, fontWeight: '700', paddingHorizontal: 10, paddingVertical: 8 },
+  sortButton: { flexShrink: 0 },
+  sortText: { color: '#68727e', fontSize: 13, textAlign: 'right' },
   card: { backgroundColor: '#fff', borderColor: '#e5e9ec', borderRadius: 19, borderWidth: 1, flexDirection: 'row', marginBottom: 14, minHeight: 166, padding: 14, shadowColor: '#19344a', shadowOpacity: 0.05, shadowRadius: 7, elevation: 2 },
   cardImageContainer: { height: 122, marginRight: 14, position: 'relative', width: 122 },
   cardImage: { borderRadius: 14, height: '100%', width: '100%' },
