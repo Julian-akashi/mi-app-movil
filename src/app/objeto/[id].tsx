@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '../../contexts/auth-context';
-import { deleteObject, getObjectById, type LocalObject } from '../../database';
+import { deleteObject, getObjectById, getOrCreateConversation, type LocalObject } from '../../database';
 
 export default function ObjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -54,6 +54,21 @@ export default function ObjectDetailScreen() {
         },
       },
     ]);
+  };
+
+  const contactar = async () => {
+    if (!object || !session) {
+      Alert.alert('Sesión requerida', 'Inicia sesión para contactar al autor del aviso.');
+      return;
+    }
+
+    try {
+      const conversationId = await getOrCreateConversation(object.id, session.id);
+      router.push({ pathname: '/mensajes/[id]', params: { id: conversationId } });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo abrir la conversación.';
+      Alert.alert('No se pudo contactar', message);
+    }
   };
 
   if (loading) {
@@ -110,6 +125,12 @@ export default function ObjectDetailScreen() {
         <Text style={styles.categoryBadge}>▣  {object.categoria}</Text>
         <Text style={styles.title}>{object.titulo}</Text>
         <Text style={styles.published}>Publicado {formatDate(object.created_at)}</Text>
+
+        {!isOwner && (
+          <Pressable style={styles.contactButton} onPress={contactar}>
+            <Text style={styles.contactButtonText}>Contactar al autor</Text>
+          </Pressable>
+        )}
 
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>ⓘ  Información del aviso</Text>
@@ -185,6 +206,8 @@ const styles = StyleSheet.create({
   categoryBadge: { alignSelf: 'flex-start', backgroundColor: '#dce8f1', borderRadius: 15, color: '#082a4e', fontSize: 13, marginTop: 16, paddingHorizontal: 11, paddingVertical: 6 },
   title: { color: '#071a2f', fontSize: 25, fontWeight: '700', lineHeight: 31, marginTop: 12 },
   published: { color: '#69757f', fontSize: 13, marginTop: 7 },
+  contactButton: { alignItems: 'center', backgroundColor: '#0b466d', borderRadius: 14, marginTop: 16, paddingVertical: 13 },
+  contactButtonText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   sectionCard: { backgroundColor: '#fff', borderColor: '#e1e6ea', borderRadius: 17, borderWidth: 1, marginTop: 18, padding: 14 },
   sectionTitle: { color: '#071a2f', fontSize: 16, fontWeight: '700', marginBottom: 10 },
   infoRow: { alignItems: 'center', backgroundColor: '#f4f6f8', borderRadius: 12, flexDirection: 'row', marginTop: 9, padding: 10 },

@@ -28,7 +28,7 @@ function AuthNavigation() {
   const { session, loading } = useAuth();
   const segments = useSegments();
   const firstSegment = segments[0];
-  const isProtectedRoute = firstSegment === '(tabs)' || firstSegment === 'crear';
+  const isProtectedRoute = firstSegment === '(tabs)' || firstSegment === 'crear' || firstSegment === 'mensajes';
 
   if (loading) {
     return (
