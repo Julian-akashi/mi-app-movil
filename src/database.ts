@@ -124,6 +124,17 @@ async function normalizeCategories(database: SQLite.SQLiteDatabase) {
   );
 }
 
+async function normalizeStatuses(database: SQLite.SQLiteDatabase) {
+  await database.runAsync(
+    `UPDATE objetos
+     SET estado = CASE estado
+       WHEN 'recuperado' THEN 'cerrado'
+       ELSE estado
+     END
+     WHERE estado IN ('recuperado')`
+  );
+}
+
 export function getDatabase() {
   if (!databasePromise) {
     databasePromise = SQLite.openDatabaseAsync('encuentrafcc.db').then(async (database) => {
@@ -201,6 +212,7 @@ export function getDatabase() {
       }
 
       await normalizeCategories(database);
+      await normalizeStatuses(database);
       await migrateCachedImages(database);
       return database;
     });

@@ -13,12 +13,12 @@ import { getDatabase } from '../../database';
 
 type ProfileStats = {
   published: number;
-  recovered: number;
+  closed: number;
   faculty: string;
 };
 
 export default function PerfilScreen() {
-  const [stats, setStats] = useState<ProfileStats>({ published: 0, recovered: 0, faculty: 'Facultad no especificada' });
+  const [stats, setStats] = useState<ProfileStats>({ published: 0, closed: 0, faculty: 'Facultad no especificada' });
   const [loading, setLoading] = useState(true);
   const { session, setSession } = useAuth();
   const router = useRouter();
@@ -28,9 +28,9 @@ export default function PerfilScreen() {
     setLoading(true);
     try {
       const database = await getDatabase();
-      const summary = await database.getFirstAsync<{ published: number; recovered: number }>(
+      const summary = await database.getFirstAsync<{ published: number; closed: number }>(
         `SELECT COUNT(*) AS published,
-                SUM(CASE WHEN estado = 'recuperado' THEN 1 ELSE 0 END) AS recovered
+                SUM(CASE WHEN estado = 'cerrado' THEN 1 ELSE 0 END) AS closed
          FROM objetos WHERE usuario_id = ?`,
         session.id
       );
@@ -42,7 +42,7 @@ export default function PerfilScreen() {
       );
       setStats({
         published: summary?.published ?? 0,
-        recovered: summary?.recovered ?? 0,
+        closed: summary?.closed ?? 0,
         faculty: faculty?.facultad || 'Facultad no especificada',
       });
     } catch (error) {
@@ -113,7 +113,7 @@ export default function PerfilScreen() {
           </View>
           <View style={styles.metrics}>
             <Metric value={loading ? '—' : String(stats.published)} label="Avisos publicados" color="#071a2f" />
-            <Metric value={loading ? '—' : String(stats.recovered)} label="Objetos recuperados" color="#009b70" />
+            <Metric value={loading ? '—' : String(stats.closed)} label="Objetos cerrados" color="#009b70" />
             <Metric value="100%" label="Confianza" color="#071a2f" />
           </View>
         </View>

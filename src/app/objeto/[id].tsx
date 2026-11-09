@@ -181,7 +181,6 @@ function formatDate(value: string) {
 }
 
 function formatState(value: string) {
-  if (value === 'recuperado') return 'Recuperado';
   if (value === 'cerrado') return 'Cerrado';
   return 'Pendiente';
 }

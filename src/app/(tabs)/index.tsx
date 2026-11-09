@@ -60,7 +60,7 @@ export default function HomeScreen() {
     try {
       const database = await getDatabase();
       const data = await database.getAllAsync<ObjectRecord>(
-        'SELECT id, titulo, categoria, tipo_aviso, facultad, lugar, estado, imagen_url, created_at FROM objetos ORDER BY datetime(created_at) DESC'
+        "SELECT id, titulo, categoria, tipo_aviso, facultad, lugar, estado, imagen_url, created_at FROM objetos WHERE estado != 'cerrado' ORDER BY datetime(created_at) DESC"
       );
       setObjetos(data);
       setCurrentPage(1);
@@ -476,7 +476,6 @@ function ObjectCard({
 }
 
 function formatState(value: string) {
-  if (value === 'recuperado') return 'Recuperado';
   if (value === 'cerrado') return 'Cerrado';
   return 'Pendiente';
 }

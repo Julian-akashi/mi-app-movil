@@ -19,7 +19,7 @@ import { useAuth } from '../contexts/auth-context';
 import { CATEGORIES, FACULTIES } from '../constants/catalogs';
 import { createObject, getObjectById, updateObject } from '../database';
 
-const STATES = ['pendiente', 'recuperado', 'cerrado'];
+const STATES = ['pendiente', 'cerrado'];
 
 export default function CrearObjetoScreen() {
   const [tipoAviso, setTipoAviso] = useState<'perdi' | 'encontre'>('perdi');
@@ -333,7 +333,6 @@ function SelectField({ value, placeholder, onPress }: { value: string; placehold
 }
 
 function formatState(value: string) {
-  if (value === 'recuperado') return 'Recuperado';
   if (value === 'cerrado') return 'Cerrado';
   return 'Pendiente';
 }

@@ -24,7 +24,7 @@ type UserObject = {
   created_at: string;
 };
 
-type NoticeFilter = 'todos' | 'activos' | 'recuperados';
+type NoticeFilter = 'todos' | 'activos' | 'cerrados';
 
 export default function MisAvisosScreen() {
   const [objects, setObjects] = useState<UserObject[]>([]);
@@ -56,7 +56,7 @@ export default function MisAvisosScreen() {
   }, [loadObjects]));
 
   const filteredObjects = useMemo(
-    () => objects.filter((item) => filter === 'todos' || (filter === 'activos' ? item.estado === 'pendiente' : item.estado === 'recuperado')),
+    () => objects.filter((item) => filter === 'todos' || (filter === 'activos' ? item.estado === 'pendiente' : item.estado === 'cerrado')),
     [filter, objects]
   );
 
@@ -117,10 +117,10 @@ export default function MisAvisosScreen() {
                 onPress={() => setFilter('activos')}
               />
               <FilterButton
-                label="Recuperados"
-                count={objects.filter((item) => item.estado === 'recuperado').length}
-                selected={filter === 'recuperados'}
-                onPress={() => setFilter('recuperados')}
+                label="Cerrados"
+                count={objects.filter((item) => item.estado === 'cerrado').length}
+                selected={filter === 'cerrados'}
+                onPress={() => setFilter('cerrados')}
               />
             </View>
           </>
@@ -223,7 +223,6 @@ function NoticeCard({
 }
 
 function formatState(value: string) {
-  if (value === 'recuperado') return 'Recuperado';
   if (value === 'cerrado') return 'Cerrado';
   return 'Pendiente';
 }
