@@ -192,6 +192,11 @@ export function getDatabase() {
           FOREIGN KEY (recipient_id) REFERENCES usuarios(id)
         );
 
+        CREATE TABLE IF NOT EXISTS configuracion (
+          clave TEXT PRIMARY KEY NOT NULL,
+          valor TEXT NOT NULL
+        );
+
       `);
 
       const migrations = [
@@ -219,6 +224,24 @@ export function getDatabase() {
   }
 
   return databasePromise;
+}
+
+export async function getSavedTheme() {
+  const database = await getDatabase();
+  const setting = await database.getFirstAsync<{ valor: string }>(
+    "SELECT valor FROM configuracion WHERE clave = 'tema'"
+  );
+
+  return setting?.valor === 'dark' ? 'dark' : 'light';
+}
+
+export async function saveTheme(theme: 'light' | 'dark') {
+  const database = await getDatabase();
+  await database.runAsync(
+    'INSERT OR REPLACE INTO configuracion (clave, valor) VALUES (?, ?)',
+    'tema',
+    theme
+  );
 }
 
 export async function registerUser(nombre: string, email: string, password: string) {

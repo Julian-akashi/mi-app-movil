@@ -18,10 +18,13 @@ import {
 import { useAuth } from '../contexts/auth-context';
 import { CATEGORIES, FACULTIES } from '../constants/catalogs';
 import { createObject, getObjectById, updateObject } from '../database';
+import { useAppTheme } from '../contexts/theme-context';
 
 const STATES = ['pendiente', 'cerrado'];
 
 export default function CrearObjetoScreen() {
+  const { colorScheme } = useAppTheme();
+  const isDark = colorScheme === 'dark';
   const [tipoAviso, setTipoAviso] = useState<'perdi' | 'encontre'>('perdi');
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
@@ -164,16 +167,16 @@ export default function CrearObjetoScreen() {
   const options = selector === 'categoria' ? CATEGORIES : selector === 'facultad' ? FACULTIES : STATES;
 
   return (
-    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView style={[styles.screen, isDark && styles.darkScreen]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
         contentContainerStyle={styles.container}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled">
-        <View style={styles.topBar}>
+        <View style={[styles.topBar, isDark && styles.darkHeader]}>
           <Pressable onPress={() => router.back()} accessibilityLabel="Regresar">
             <Text style={styles.backArrow}>‹</Text>
           </Pressable>
-          <Text style={styles.topTitle}>{editingId ? 'Editar aviso' : 'Reportar objeto'}</Text>
+          <Text style={[styles.topTitle, isDark && styles.darkText]}>{editingId ? 'Editar aviso' : 'Reportar objeto'}</Text>
           <Pressable onPress={() => router.back()}>
             <Text style={styles.cancel}>Cancelar</Text>
           </Pressable>
@@ -182,15 +185,15 @@ export default function CrearObjetoScreen() {
         <View style={styles.content}>
           <View style={styles.introRow}>
             <View>
-              <Text style={styles.introTitle}>Nuevo aviso de campus</Text>
-              <Text style={styles.introText}>Publica para la comunidad{'\n'}universitaria</Text>
+              <Text style={[styles.introTitle, isDark && styles.darkText]}>Nuevo aviso de campus</Text>
+              <Text style={[styles.introText, isDark && styles.darkMutedText]}>Publica para la comunidad{'\n'}universitaria</Text>
             </View>
             <View style={styles.requiredBadge}>
               <Text style={styles.requiredText}>* Campos{'\n'}obligatorios</Text>
             </View>
           </View>
 
-          <Text style={styles.sectionLabel}>Tipo de aviso <Text style={styles.required}>*</Text></Text>
+          <Text style={[styles.sectionLabel, isDark && styles.darkText]}>Tipo de aviso <Text style={styles.required}>*</Text></Text>
           <View style={styles.noticeRow}>
             <NoticeCard
               icon="⌕"
@@ -209,28 +212,28 @@ export default function CrearObjetoScreen() {
           </View>
 
           <FormLabel text="Nombre o título del objeto" required />
-          <TextInput style={styles.input} placeholder="Ej: Mochila azul con termo metálico" placeholderTextColor="#9aa5ae" value={titulo} onChangeText={setTitulo} />
+          <TextInput style={[styles.input, isDark && styles.darkInput]} placeholder="Ej: Mochila azul con termo metálico" placeholderTextColor="#9aa5ae" value={titulo} onChangeText={setTitulo} />
 
           <FormLabel text="Facultad o Dependencia" required />
           <SelectField value={facultad} placeholder="Selecciona una facultad" onPress={() => setSelector('facultad')} />
-          <Text style={styles.note}>ⓘ La lista se actualiza según tu campus universitario</Text>
+          <Text style={[styles.note, isDark && styles.darkMutedText]}>ⓘ La lista se actualiza según tu campus universitario</Text>
 
           <FormLabel text="Lugar específico" required />
-          <TextInput style={styles.input} placeholder="Ej: Laboratorio 3, Edificio, pasillo principal" placeholderTextColor="#9aa5ae" value={lugar} onChangeText={setLugar} />
-          <View style={styles.infoBox}><Text style={styles.infoIcon}>ⓘ</Text><Text style={styles.infoText}>Recuerda verificar el lugar exacto para facilitar la localización inmediata del objeto.</Text></View>
+          <TextInput style={[styles.input, isDark && styles.darkInput]} placeholder="Ej: Laboratorio 3, Edificio, pasillo principal" placeholderTextColor="#9aa5ae" value={lugar} onChangeText={setLugar} />
+          <View style={[styles.infoBox, isDark && styles.darkInfoBox]}><Text style={[styles.infoIcon, isDark && styles.darkMutedText]}>ⓘ</Text><Text style={[styles.infoText, isDark && styles.darkMutedText]}>Recuerda verificar el lugar exacto para facilitar la localización inmediata del objeto.</Text></View>
 
           <FormLabel text="Descripción detallada" required />
-          <TextInput style={[styles.input, styles.textArea]} placeholder="Describe detalles específicos, marcas, rayones, stickers, contenido o características distintivas que permitan corroborar propiedad..." placeholderTextColor="#9aa5ae" multiline value={descripcion} onChangeText={setDescripcion} />
+          <TextInput style={[styles.input, styles.textArea, isDark && styles.darkInput]} placeholder="Describe detalles específicos, marcas, rayones, stickers, contenido o características distintivas que permitan corroborar propiedad..." placeholderTextColor="#9aa5ae" multiline value={descripcion} onChangeText={setDescripcion} />
 
           <FormLabel text="Medio de contacto o indicaciones de entrega" required />
           <TextInput
-            style={styles.input}
+            style={[styles.input, isDark && styles.darkInput]}
             placeholder="Ej: Dejándolo en recepción del edificio"
             placeholderTextColor="#9aa5ae"
             value={contacto}
             onChangeText={setContacto}
           />
-          <Text style={styles.privacy}>Protegemos tu privacidad: puedes indicar una oficina o ventanilla oficial.</Text>
+          <Text style={[styles.privacy, isDark && styles.darkMutedText]}>Protegemos tu privacidad: puedes indicar una oficina o ventanilla oficial.</Text>
 
           <FormLabel text="Categoría" required />
           <SelectField value={categoria} placeholder="Selecciona una categoría" onPress={() => setSelector('categoria')} />
@@ -244,19 +247,19 @@ export default function CrearObjetoScreen() {
 
           <FormLabel text="Fecha del suceso" required />
           <Pressable
-            style={styles.input}
+            style={[styles.input, isDark && styles.darkInput]}
             onPress={() => setCalendarioVisible(true)}
             accessibilityRole="button"
             accessibilityLabel="Seleccionar fecha del suceso">
-            <Text style={[styles.selectValue, !fechaSuceso && styles.placeholder]}>
+            <Text style={[styles.selectValue, isDark && styles.darkText, !fechaSuceso && styles.placeholder]}>
               {fechaSuceso || 'Selecciona una fecha'}
             </Text>
-            <Text style={styles.calendarIcon}>▣</Text>
+            <Text style={[styles.calendarIcon, isDark && styles.darkMutedText]}>▣</Text>
           </Pressable>
 
           <View style={styles.fieldHeading}>
-            <Text style={styles.sectionLabel}>Fotografía del objeto</Text>
-            <Text style={styles.recommended}>Recomendado</Text>
+            <Text style={[styles.sectionLabel, isDark && styles.darkText]}>Fotografía del objeto</Text>
+            <Text style={[styles.recommended, isDark && styles.darkMutedText]}>Recomendado</Text>
           </View>
           <Pressable style={styles.uploadBox} onPress={seleccionarImagen}>
             {imagenUri ? (
@@ -264,8 +267,8 @@ export default function CrearObjetoScreen() {
             ) : (
               <>
                 <View style={styles.uploadIcon}><Text style={styles.cameraIcon}>▣</Text></View>
-                <Text style={styles.uploadTitle}>Subir imagen desde galería</Text>
-                <Text style={styles.uploadHint}>Formatos JPG, PNG (máx. 5MB)</Text>
+                <Text style={[styles.uploadTitle, isDark && styles.darkText]}>Subir imagen desde galería</Text>
+                <Text style={[styles.uploadHint, isDark && styles.darkMutedText]}>Formatos JPG, PNG (máx. 5MB)</Text>
                 <View style={styles.addFile}><Text style={styles.addFileText}>＋  Agregar archivo</Text></View>
               </>
             )}
@@ -295,7 +298,7 @@ export default function CrearObjetoScreen() {
       <Modal visible={selector !== null} transparent animationType="fade" onRequestClose={() => setSelector(null)}>
         <Pressable style={styles.modalOverlay} onPress={() => setSelector(null)}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>
+            <Text style={[styles.modalTitle, isDark && styles.darkText]}>
               {selector === 'categoria'
                 ? 'Selecciona una categoría'
                 : selector === 'facultad'
@@ -309,7 +312,7 @@ export default function CrearObjetoScreen() {
                 else setEstado(option);
                 setSelector(null);
               }}>
-                <Text style={styles.optionText}>{selector === 'estado' ? formatState(option) : option}</Text>
+                <Text style={[styles.optionText, isDark && styles.darkText]}>{selector === 'estado' ? formatState(option) : option}</Text>
               </Pressable>
             ))}
           </View>
@@ -320,14 +323,18 @@ export default function CrearObjetoScreen() {
 }
 
 function FormLabel({ text, required = false }: { text: string; required?: boolean }) {
-  return <Text style={styles.formLabel}>{text}{required && <Text style={styles.required}> *</Text>}</Text>;
+  const { colorScheme } = useAppTheme();
+  return <Text style={[styles.formLabel, colorScheme === 'dark' && styles.darkText]}>{text}{required && <Text style={styles.required}> *</Text>}</Text>;
 }
 
 function SelectField({ value, placeholder, onPress }: { value: string; placeholder: string; onPress: () => void }) {
+  const { colorScheme } = useAppTheme();
+  const isDark = colorScheme === 'dark';
+
   return (
-    <Pressable style={styles.input} onPress={onPress}>
-      <Text style={[styles.selectValue, !value && styles.placeholder]}>{value || placeholder}</Text>
-      <Text style={styles.selectArrow}>⌄</Text>
+    <Pressable style={[styles.input, isDark && styles.darkInput]} onPress={onPress}>
+      <Text style={[styles.selectValue, isDark && styles.darkText, !value && styles.placeholder]}>{value || placeholder}</Text>
+      <Text style={[styles.selectArrow, isDark && styles.darkMutedText]}>⌄</Text>
     </Pressable>
   );
 }
@@ -338,18 +345,28 @@ function formatState(value: string) {
 }
 
 function NoticeCard({ icon, title, description, selected, onPress }: { icon: string; title: string; description: string; selected: boolean; onPress: () => void }) {
+  const { colorScheme } = useAppTheme();
+  const isDark = colorScheme === 'dark';
+
   return (
-    <Pressable style={[styles.noticeCard, selected && styles.noticeSelected]} onPress={onPress}>
+    <Pressable style={[styles.noticeCard, isDark && styles.darkCard, selected && styles.noticeSelected]} onPress={onPress}>
       <View style={styles.noticeIcon}><Text style={styles.noticeIconText}>{icon}</Text></View>
       <View style={styles.noticeCheck}>{selected && <Text style={styles.checkmark}>✓</Text>}</View>
-      <Text style={styles.noticeTitle}>{title}</Text>
-      <Text style={styles.noticeDescription}>{description}</Text>
+      <Text style={[styles.noticeTitle, isDark && styles.darkText]}>{title}</Text>
+      <Text style={[styles.noticeDescription, isDark && styles.darkMutedText]}>{description}</Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { backgroundColor: '#f7f9fa', flex: 1 },
+  darkScreen: { backgroundColor: '#101820' },
+  darkHeader: { backgroundColor: '#1b2933', borderBottomColor: '#293845' },
+  darkInput: { backgroundColor: '#1b2933', borderColor: '#405361', color: '#edf4f7' },
+  darkCard: { backgroundColor: '#1b2933', borderColor: '#405361' },
+  darkInfoBox: { backgroundColor: '#1b2933', borderColor: '#405361' },
+  darkText: { color: '#edf4f7' },
+  darkMutedText: { color: '#aebbc4' },
   container: { flexGrow: 1, paddingBottom: 36 },
   topBar: { alignItems: 'center', backgroundColor: '#fff', borderBottomColor: '#e6ebef', borderBottomWidth: 1, flexDirection: 'row', height: 54, justifyContent: 'space-between', paddingHorizontal: 15 },
   backArrow: { color: '#071a2f', fontSize: 38, lineHeight: 38 },

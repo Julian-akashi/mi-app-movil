@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../../contexts/auth-context';
 import { getDatabase } from '../../database';
+import { useAppTheme } from '../../contexts/theme-context';
 
 type ProfileStats = {
   published: number;
@@ -21,6 +22,8 @@ export default function PerfilScreen() {
   const [stats, setStats] = useState<ProfileStats>({ published: 0, closed: 0, faculty: 'Facultad no especificada' });
   const [loading, setLoading] = useState(true);
   const { session, setSession } = useAuth();
+  const { colorScheme } = useAppTheme();
+  const isDark = colorScheme === 'dark';
   const router = useRouter();
 
   const loadStats = useCallback(async () => {
@@ -79,19 +82,19 @@ export default function PerfilScreen() {
     .toUpperCase();
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, isDark && styles.darkScreen]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.brandText}>Encuentra<Text style={styles.brandAccent}>FCC</Text></Text>
-          <Text style={styles.headerTitle}>Mi Perfil</Text>
+        <View style={[styles.header, isDark && styles.darkHeader]}>
+          <Text style={[styles.brandText, isDark && styles.darkText]}>Encuentra<Text style={styles.brandAccent}>FCC</Text></Text>
+          <Text style={[styles.headerTitle, isDark && styles.darkText]}>Mi Perfil</Text>
         </View>
 
-        <View style={styles.profileCard}>
+        <View style={[styles.profileCard, isDark && styles.darkCard]}>
           <View style={styles.profileTop}>
             <View style={styles.avatar}><Text style={styles.avatarText}>{initials}</Text></View>
             <View style={styles.profileInfo}>
-              <Text style={styles.name}>{session?.nombre || 'Usuario'}</Text>
-              <Text style={styles.email}>{session?.email || 'Sin correo registrado'}</Text>
+              <Text style={[styles.name, isDark && styles.darkText]}>{session?.nombre || 'Usuario'}</Text>
+              <Text style={[styles.email, isDark && styles.darkMutedText]}>{session?.email || 'Sin correo registrado'}</Text>
               <View style={styles.tag}><Text style={styles.tagText}>▦  Comunidad FCC</Text></View>
             </View>
           </View>
@@ -107,9 +110,9 @@ export default function PerfilScreen() {
           </View>
         </View>
 
-        <View style={styles.impactCard}>
+        <View style={[styles.impactCard, isDark && styles.darkCard]}>
           <View style={styles.impactHeader}>
-            <Text style={styles.impactTitle}>Impacto en la comunidad{'\n'}campus</Text>
+            <Text style={[styles.impactTitle, isDark && styles.darkText]}>Impacto en la comunidad{'\n'}campus</Text>
           </View>
           <View style={styles.metrics}>
             <Metric value={loading ? '—' : String(stats.published)} label="Avisos publicados" color="#071a2f" />
@@ -118,7 +121,7 @@ export default function PerfilScreen() {
           </View>
         </View>
 
-        <View style={styles.optionsCard}>
+        <View style={[styles.optionsCard, isDark && styles.darkCard]}>
           <OptionRow
             title="Mis facultades de interés"
             description="Recibe coincidencias de campus compartidos"
@@ -160,10 +163,13 @@ export default function PerfilScreen() {
 }
 
 function Metric({ value, label, color }: { value: string; label: string; color: string }) {
+  const { colorScheme } = useAppTheme();
+  const isDark = colorScheme === 'dark';
+
   return (
     <View style={styles.metric}>
       <Text style={[styles.metricValue, { color }]}>{value}</Text>
-      <Text style={styles.metricLabel}>{label}</Text>
+      <Text style={[styles.metricLabel, isDark && styles.darkMutedText]}>{label}</Text>
     </View>
   );
 }
@@ -181,12 +187,15 @@ function OptionRow({
   onPress: () => void;
   last?: boolean;
 }) {
+  const { colorScheme } = useAppTheme();
+  const isDark = colorScheme === 'dark';
+
   return (
     <Pressable style={[styles.optionRow, last && styles.optionRowLast]} onPress={onPress}>
       <View style={styles.optionIcon}><Text style={styles.optionIconText}>{icon}</Text></View>
       <View style={styles.optionText}>
-        <Text style={styles.optionTitle}>{title}</Text>
-        <Text style={styles.optionDescription}>{description}</Text>
+        <Text style={[styles.optionTitle, isDark && styles.darkText]}>{title}</Text>
+        <Text style={[styles.optionDescription, isDark && styles.darkMutedText]}>{description}</Text>
       </View>
       <Text style={styles.optionArrow}>›</Text>
     </Pressable>
@@ -195,8 +204,13 @@ function OptionRow({
 
 const styles = StyleSheet.create({
   screen: { backgroundColor: '#f6f8fa', flex: 1 },
+  darkScreen: { backgroundColor: '#101820' },
   content: { paddingBottom: 30, paddingHorizontal: 20 },
   header: { alignItems: 'center', borderBottomColor: '#e5eaee', borderBottomWidth: 1, flexDirection: 'row', height: 72, justifyContent: 'space-between', marginHorizontal: -20, paddingHorizontal: 20 },
+  darkHeader: { borderBottomColor: '#293845' },
+  darkCard: { backgroundColor: '#1b2933', borderColor: '#30414d' },
+  darkText: { color: '#edf4f7' },
+  darkMutedText: { color: '#aebbc4' },
   brandText: { color: '#071a2f', fontSize: 22, fontWeight: '700' },
   brandAccent: { color: '#16a1d5' },
   headerTitle: { color: '#263440', fontSize: 18 },

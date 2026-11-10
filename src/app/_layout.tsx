@@ -1,10 +1,11 @@
-import { DarkTheme, DefaultTheme, Redirect, Stack, ThemeProvider, useSegments } from 'expo-router';
+import { DarkTheme, DefaultTheme, Redirect, Stack, ThemeProvider as RouterThemeProvider, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import * as SQLite from 'expo-sqlite';
-import { ActivityIndicator, StyleSheet, View, useColorScheme } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AuthProvider, useAuth } from '@/contexts/auth-context';
+import { ThemeProvider, useAppTheme } from '@/contexts/theme-context';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -13,14 +14,22 @@ if (process.env.EXPO_OS === 'web') {
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  return (
+    <ThemeProvider>
+      <ThemedNavigation />
+    </ThemeProvider>
+  );
+}
+
+function ThemedNavigation() {
+  const { colorScheme } = useAppTheme();
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <RouterThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
         <AuthNavigation />
       </AuthProvider>
-    </ThemeProvider>
+    </RouterThemeProvider>
   );
 }
 

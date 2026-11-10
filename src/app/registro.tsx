@@ -16,8 +16,11 @@ import {
 import { useAuth } from '../contexts/auth-context';
 import { FACULTIES } from '../constants/catalogs';
 import { registerUser } from '../database';
+import { useAppTheme } from '../contexts/theme-context';
 
 export default function RegistroScreen() {
+  const { colorScheme } = useAppTheme();
+  const isDark = colorScheme === 'dark';
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [facultad, setFacultad] = useState('');
@@ -65,7 +68,7 @@ export default function RegistroScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.screen}
+      style={[styles.screen, isDark && styles.darkScreen]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
         contentContainerStyle={styles.container}
@@ -261,6 +264,7 @@ function PasswordField({
 
 const styles = StyleSheet.create({
   screen: { backgroundColor: '#fff', flex: 1 },
+  darkScreen: { backgroundColor: '#101820' },
   container: { flexGrow: 1, paddingBottom: 56 },
   topBar: { alignItems: 'center', borderBottomColor: '#edf0f2', borderBottomWidth: 1, flexDirection: 'row', height: 78, justifyContent: 'space-between', paddingHorizontal: 22 },
   backArrow: { color: '#071a2f', fontSize: 42, fontWeight: '300', lineHeight: 42 },

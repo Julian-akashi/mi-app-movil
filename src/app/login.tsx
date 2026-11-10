@@ -14,8 +14,11 @@ import {
 } from 'react-native';
 import { loginUser } from '../database';
 import { useAuth } from '../contexts/auth-context';
+import { useAppTheme } from '../contexts/theme-context';
 
 export default function LoginScreen() {
+  const { colorScheme } = useAppTheme();
+  const isDark = colorScheme === 'dark';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mostrarPassword, setMostrarPassword] = useState(false);
@@ -44,7 +47,7 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.screen}
+      style={[styles.screen, isDark && styles.darkScreen]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.content}>
@@ -168,6 +171,7 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   screen: { backgroundColor: '#eef2f5', flex: 1 },
+  darkScreen: { backgroundColor: '#101820' },
   container: { alignItems: 'center', flexGrow: 1, justifyContent: 'center', padding: 16 },
   content: { maxWidth: 430, width: '100%' },
   institutionBadge: { alignSelf: 'center', backgroundColor: '#dceaf3', borderRadius: 14, flexDirection: 'row', marginBottom: 36, paddingHorizontal: 12, paddingVertical: 6 },

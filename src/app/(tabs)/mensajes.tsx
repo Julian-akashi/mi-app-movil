@@ -3,11 +3,14 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../../contexts/auth-context';
 import { getConversations, type ConversationSummary } from '../../database';
+import { useAppTheme } from '../../contexts/theme-context';
 
 export default function MensajesScreen() {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const { session } = useAuth();
+  const { colorScheme } = useAppTheme();
+  const isDark = colorScheme === 'dark';
   const router = useRouter();
 
   const loadConversations = useCallback(async () => {
@@ -28,25 +31,25 @@ export default function MensajesScreen() {
   }, [loadConversations]));
 
   if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color="#0b466d" /></View>;
+    return <View style={[styles.center, isDark && styles.darkScreen]}><ActivityIndicator size="large" color="#6eb6df" /></View>;
   }
 
   return (
-    <View style={styles.screen}>
-      <View style={styles.header}>
-        <Text style={styles.brand}>Encuentra<Text style={styles.brandAccent}>FCC</Text></Text>
-        <Text style={styles.title}>Mensajes</Text>
+    <View style={[styles.screen, isDark && styles.darkScreen]}>
+      <View style={[styles.header, isDark && styles.darkHeader]}>
+        <Text style={[styles.brand, isDark && styles.darkText]}>Encuentra<Text style={styles.brandAccent}>FCC</Text></Text>
+        <Text style={[styles.title, isDark && styles.darkText]}>Mensajes</Text>
       </View>
       <FlatList
         data={conversations}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.content}
-        ListEmptyComponent={<Text style={styles.empty}>Aún no tienes conversaciones.</Text>}
+        ListEmptyComponent={<Text style={[styles.empty, isDark && styles.darkMutedText]}>Aún no tienes conversaciones.</Text>}
         renderItem={({ item }) => {
           const otherName = item.owner_id === session?.id ? item.requester_name : item.owner_name;
           return (
             <Pressable
-              style={styles.row}
+              style={[styles.row, isDark && styles.darkCard]}
               onPress={() => router.push({ pathname: '/mensajes/[id]', params: { id: item.id } })}>
               {item.imagen_url ? (
                 <Image source={{ uri: item.imagen_url }} style={styles.image} />
@@ -54,9 +57,9 @@ export default function MensajesScreen() {
                 <View style={styles.placeholder}><Text style={styles.placeholderText}>✦</Text></View>
               )}
               <View style={styles.rowText}>
-                <Text style={styles.objectTitle} numberOfLines={1}>{item.titulo}</Text>
-                <Text style={styles.person} numberOfLines={1}>{otherName}</Text>
-                <Text style={styles.preview} numberOfLines={1}>{item.last_message || 'Nueva conversación'}</Text>
+                <Text style={[styles.objectTitle, isDark && styles.darkText]} numberOfLines={1}>{item.titulo}</Text>
+                <Text style={[styles.person, isDark && styles.darkMutedText]} numberOfLines={1}>{otherName}</Text>
+                <Text style={[styles.preview, isDark && styles.darkMutedText]} numberOfLines={1}>{item.last_message || 'Nueva conversación'}</Text>
               </View>
               {item.unread_count > 0 && (
                 <View style={styles.unread}><Text style={styles.unreadText}>{item.unread_count}</Text></View>
@@ -72,6 +75,11 @@ export default function MensajesScreen() {
 const styles = StyleSheet.create({
   screen: { backgroundColor: '#f6f8fa', flex: 1 },
   center: { alignItems: 'center', backgroundColor: '#f6f8fa', flex: 1, justifyContent: 'center' },
+  darkScreen: { backgroundColor: '#101820' },
+  darkHeader: { borderBottomColor: '#293845' },
+  darkCard: { backgroundColor: '#1b2933', borderColor: '#30414d' },
+  darkText: { color: '#edf4f7' },
+  darkMutedText: { color: '#aebbc4' },
   header: { alignItems: 'center', borderBottomColor: '#e5eaee', borderBottomWidth: 1, flexDirection: 'row', height: 72, justifyContent: 'space-between', paddingHorizontal: 20 },
   brand: { color: '#071a2f', fontSize: 21, fontWeight: '700' },
   brandAccent: { color: '#16a1d5' },

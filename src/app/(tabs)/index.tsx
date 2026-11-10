@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '../../contexts/auth-context';
+import { useAppTheme } from '../../contexts/theme-context';
 import { CATEGORIES, FACULTIES } from '../../constants/catalogs';
 import { deleteObject, getDatabase } from '../../database';
 
@@ -53,7 +54,9 @@ export default function HomeScreen() {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const { session } = useAuth();
+  const { colorScheme, toggleTheme } = useAppTheme();
   const router = useRouter();
+  const isDark = colorScheme === 'dark';
 
   const obtenerObjetos = useCallback(async () => {
     setLoading(true);
@@ -138,7 +141,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, isDark && styles.darkScreen]}>
       <FlatList
         data={objetosDePagina}
         keyExtractor={(item) => item.id}
@@ -146,18 +149,26 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <>
-            <View style={styles.header}>
+            <View style={[styles.header, isDark && styles.darkHeader]}>
               <View style={styles.brand}>
-                <Text style={styles.brandText}>
+                <Text style={[styles.brandText, isDark && styles.darkText]}>
                   Encuentra<Text style={styles.brandAccent}>FCC</Text>
                 </Text>
               </View>
+              <Pressable
+                style={[styles.themeButton, isDark && styles.darkThemeButton]}
+                onPress={toggleTheme}
+                accessibilityRole="button"
+                accessibilityLabel={isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
+              >
+                <Text style={styles.themeButtonText}>{isDark ? '☀ Claro' : '☾ Oscuro'}</Text>
+              </Pressable>
             </View>
 
-            <View style={styles.welcomeCard}>
+            <View style={[styles.welcomeCard, isDark && styles.darkCard]}>
               <View style={styles.welcomeText}>
-                <Text style={styles.greeting}>¡Hola, {session?.nombre || 'usuario'}!</Text>
-                <Text style={styles.greetingDescription}>
+                <Text style={[styles.greeting, isDark && styles.darkText]}>¡Hola, {session?.nombre || 'usuario'}!</Text>
+                <Text style={[styles.greetingDescription, isDark && styles.darkMutedText]}>
                   ¿Has perdido o encontrado alguna{'\n'}pertenencia hoy?
                 </Text>
               </View>
@@ -168,10 +179,10 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.searchRow}>
-              <View style={styles.searchBox}>
+              <View style={[styles.searchBox, isDark && styles.darkInput]}>
                 <Text style={styles.searchIcon}>⌕</Text>
                 <TextInput
-                  style={styles.searchInput}
+                  style={[styles.searchInput, isDark && styles.darkText]}
                   value={search}
                   onChangeText={(value) => {
                     setSearch(value);
@@ -184,7 +195,7 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            <View style={styles.statusTabs}>
+            <View style={[styles.statusTabs, isDark && styles.darkStatusTabs]}>
               <StatusTab
                 label="Todos"
                 count={objetos.length}
@@ -403,10 +414,13 @@ function StatusTab({
   selected: boolean;
   onPress: () => void;
 }) {
+  const { colorScheme } = useAppTheme();
+  const isDark = colorScheme === 'dark';
+
   return (
     <Pressable style={[styles.statusTab, selected && styles.statusTabSelected]} onPress={onPress}>
-      <Text style={[styles.statusLabel, selected && styles.statusLabelSelected]}>{label}</Text>
-      <Text style={[styles.statusCount, selected && styles.statusLabelSelected]}>({count})</Text>
+      <Text style={[styles.statusLabel, isDark && styles.darkMutedText, selected && styles.statusLabelSelected]}>{label}</Text>
+      <Text style={[styles.statusCount, isDark && styles.darkMutedText, selected && styles.statusLabelSelected]}>({count})</Text>
     </Pressable>
   );
 }
@@ -426,9 +440,11 @@ function ObjectCard({
 }) {
   const isFound = item.tipo_aviso === 'encontre';
   const statusText = formatState(item.estado);
+  const { colorScheme } = useAppTheme();
+  const isDark = colorScheme === 'dark';
 
   return (
-    <Pressable style={styles.card} onPress={onPress}>
+    <Pressable style={[styles.card, isDark && styles.darkObjectCard]} onPress={onPress}>
       <View style={styles.cardImageContainer}>
         {item.imagen_url ? (
           <Image source={{ uri: item.imagen_url }} style={styles.cardImage} />
@@ -444,12 +460,12 @@ function ObjectCard({
       <View style={styles.cardDetails}>
         <View style={styles.cardTopRow}>
           <Text style={styles.stateBadge}>{statusText}</Text>
-          <Text style={styles.timeText}>◷ {formatDate(item.created_at)}</Text>
+          <Text style={[styles.timeText, isDark && styles.darkMutedText]}>◷ {formatDate(item.created_at)}</Text>
         </View>
-        <Text style={styles.cardTitle} numberOfLines={1}>{item.titulo}</Text>
-        <Text style={styles.detailText} numberOfLines={1}>▣  {item.categoria}</Text>
-        <Text style={styles.detailText} numberOfLines={1}>⌂  {item.facultad || 'Facultad no especificada'}</Text>
-        <Text style={styles.detailText} numberOfLines={1}>⌖  {item.lugar}</Text>
+        <Text style={[styles.cardTitle, isDark && styles.darkText]} numberOfLines={1}>{item.titulo}</Text>
+        <Text style={[styles.detailText, isDark && styles.darkDetailText]} numberOfLines={1}>▣  {item.categoria}</Text>
+        <Text style={[styles.detailText, isDark && styles.darkDetailText]} numberOfLines={1}>⌂  {item.facultad || 'Facultad no especificada'}</Text>
+        <Text style={[styles.detailText, isDark && styles.darkDetailText]} numberOfLines={1}>⌖  {item.lugar}</Text>
         {isOwner && (
           <View style={styles.ownerActions}>
             <Pressable
@@ -488,13 +504,25 @@ function formatDate(value: string) {
 
 const styles = StyleSheet.create({
   screen: { backgroundColor: '#f6f8fa', flex: 1 },
+  darkScreen: { backgroundColor: '#101820' },
   center: { alignItems: 'center', backgroundColor: '#f6f8fa', flex: 1, justifyContent: 'center' },
   loadingText: { color: '#526575', marginTop: 10 },
   listContent: { paddingBottom: 28, paddingHorizontal: 20 },
   header: { alignItems: 'center', borderBottomColor: '#e8edf1', borderBottomWidth: 1, flexDirection: 'row', height: 72, justifyContent: 'space-between', marginHorizontal: -20, paddingHorizontal: 22 },
+  darkHeader: { borderBottomColor: '#293845' },
+  darkCard: { backgroundColor: '#1b2933', borderColor: '#30414d' },
+  darkObjectCard: { backgroundColor: '#1b2933', borderColor: '#30414d' },
+  darkDetailText: { borderBottomColor: '#30414d', color: '#aebbc4' },
+  darkInput: { backgroundColor: '#26343e', borderColor: '#405361' },
+  darkStatusTabs: { backgroundColor: '#26343e' },
+  darkText: { color: '#edf4f7' },
+  darkMutedText: { color: '#aebbc4' },
   brand: { alignItems: 'center', flexDirection: 'row' },
   brandText: { color: '#071a2f', fontSize: 21, fontWeight: '700' },
   brandAccent: { color: '#16a1d5' },
+  themeButton: { backgroundColor: '#e4edf3', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8 },
+  darkThemeButton: { backgroundColor: '#263b4a' },
+  themeButtonText: { color: '#0b466d', fontSize: 13, fontWeight: '700' },
   welcomeCard: { alignItems: 'center', backgroundColor: '#fff', borderColor: '#e6eaed', borderRadius: 20, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginTop: 15, minHeight: 150, paddingHorizontal: 20, shadowColor: '#19344a', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
   welcomeText: { flex: 1 },
   greeting: { color: '#071a2f', fontSize: 26, fontWeight: '700', marginBottom: 5 },

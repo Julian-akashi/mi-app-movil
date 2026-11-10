@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '../../contexts/auth-context';
+import { useAppTheme } from '../../contexts/theme-context';
 import { deleteObject, getDatabase } from '../../database';
 
 type UserObject = {
@@ -31,6 +32,8 @@ export default function MisAvisosScreen() {
   const [filter, setFilter] = useState<NoticeFilter>('todos');
   const [loading, setLoading] = useState(true);
   const { session } = useAuth();
+  const { colorScheme } = useAppTheme();
+  const isDark = colorScheme === 'dark';
   const router = useRouter();
 
   const loadObjects = useCallback(async () => {
@@ -81,7 +84,7 @@ export default function MisAvisosScreen() {
   };
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, isDark && styles.darkScreen]}>
       <FlatList
         data={filteredObjects}
         keyExtractor={(item) => item.id}
@@ -89,16 +92,16 @@ export default function MisAvisosScreen() {
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <>
-            <View style={styles.header}>
-              <Text style={styles.brandText}>Encuentra<Text style={styles.brandAccent}>FCC</Text></Text>
+            <View style={[styles.header, isDark && styles.darkHeader]}>
+              <Text style={[styles.brandText, isDark && styles.darkText]}>Encuentra<Text style={styles.brandAccent}>FCC</Text></Text>
             </View>
 
             <View style={styles.heading}>
               <View style={styles.headingRow}>
-                <Text style={styles.title}>Mis avisos</Text>
-                <Text style={styles.publishedCount}>{objects.length} publicados</Text>
+                <Text style={[styles.title, isDark && styles.darkText]}>Mis avisos</Text>
+                <Text style={[styles.publishedCount, isDark && styles.darkPublishedCount]}>{objects.length} publicados</Text>
               </View>
-              <Text style={styles.subtitle}>
+              <Text style={[styles.subtitle, isDark && styles.darkMutedText]}>
                 Administra tus publicaciones y actualiza su estado cuando los resuelvas.
               </Text>
             </View>
@@ -164,10 +167,13 @@ function FilterButton({
   selected: boolean;
   onPress: () => void;
 }) {
+  const { colorScheme } = useAppTheme();
+  const isDark = colorScheme === 'dark';
+
   return (
-    <Pressable style={[styles.filterButton, selected && styles.filterButtonSelected]} onPress={onPress}>
-      <Text style={[styles.filterLabel, selected && styles.filterLabelSelected]}>{label}</Text>
-      <Text style={[styles.filterCount, selected && styles.filterLabelSelected]}>({count})</Text>
+    <Pressable style={[styles.filterButton, isDark && styles.darkFilterButton, selected && styles.filterButtonSelected]} onPress={onPress}>
+      <Text style={[styles.filterLabel, isDark && styles.darkText, selected && styles.filterLabelSelected]}>{label}</Text>
+      <Text style={[styles.filterCount, isDark && styles.darkMutedText, selected && styles.filterLabelSelected]}>({count})</Text>
     </Pressable>
   );
 }
@@ -184,9 +190,11 @@ function NoticeCard({
   onDelete: () => void;
 }) {
   const isFound = item.tipo_aviso === 'encontre';
+  const { colorScheme } = useAppTheme();
+  const isDark = colorScheme === 'dark';
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, isDark && styles.darkCard]}>
       <View style={styles.cardMain}>
         {item.imagen_url ? (
           <Image source={{ uri: item.imagen_url }} style={styles.image} />
@@ -200,9 +208,9 @@ function NoticeCard({
             </Text>
             <Text style={styles.stateBadge}>{formatState(item.estado)}</Text>
           </View>
-          <Text style={styles.cardTitle} numberOfLines={1}>{item.titulo}</Text>
-          <Text style={styles.cardDetail} numberOfLines={1}>⌖ {item.facultad || 'Facultad no especificada'}</Text>
-          <Text style={styles.cardDetail} numberOfLines={1}>
+          <Text style={[styles.cardTitle, isDark && styles.darkText]} numberOfLines={1}>{item.titulo}</Text>
+          <Text style={[styles.cardDetail, isDark && styles.darkMutedText]} numberOfLines={1}>⌖ {item.facultad || 'Facultad no especificada'}</Text>
+          <Text style={[styles.cardDetail, isDark && styles.darkMutedText]} numberOfLines={1}>
             Publicado el {formatDate(item.created_at)} · {item.lugar || 'Lugar no especificado'}
           </Text>
         </View>
@@ -235,6 +243,13 @@ function formatDate(value: string) {
 
 const styles = StyleSheet.create({
   screen: { backgroundColor: '#f6f8fa', flex: 1 },
+  darkScreen: { backgroundColor: '#101820' },
+  darkHeader: { borderBottomColor: '#293845' },
+  darkCard: { backgroundColor: '#1b2933', borderColor: '#30414d' },
+  darkFilterButton: { borderColor: '#405361' },
+  darkText: { color: '#edf4f7' },
+  darkMutedText: { color: '#aebbc4' },
+  darkPublishedCount: { backgroundColor: '#263b4a', color: '#d8eaf3' },
   listContent: { paddingBottom: 28, paddingHorizontal: 20 },
   header: { borderBottomColor: '#e5eaee', borderBottomWidth: 1, height: 72, justifyContent: 'center', marginHorizontal: -20, paddingHorizontal: 20 },
   brandText: { color: '#071a2f', fontSize: 22, fontWeight: '700' },

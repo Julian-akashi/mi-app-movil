@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../../contexts/auth-context';
 import { deleteObject, getObjectById, getOrCreateConversation, type LocalObject } from '../../database';
+import { useAppTheme } from '../../contexts/theme-context';
 
 export default function ObjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -19,6 +20,8 @@ export default function ObjectDetailScreen() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { session } = useAuth();
+  const { colorScheme } = useAppTheme();
+  const isDark = colorScheme === 'dark';
 
   const loadObject = useCallback(() => {
     if (!id) return;
@@ -73,7 +76,7 @@ export default function ObjectDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, isDark && styles.darkScreen]}>
         <ActivityIndicator size="large" color="#0b466d" />
       </View>
     );
@@ -81,8 +84,8 @@ export default function ObjectDetailScreen() {
 
   if (!object) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.notFound}>Aviso no encontrado.</Text>
+      <View style={[styles.center, isDark && styles.darkScreen]}>
+        <Text style={[styles.notFound, isDark && styles.darkText]}>Aviso no encontrado.</Text>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>Regresar</Text>
         </Pressable>
@@ -94,13 +97,13 @@ export default function ObjectDetailScreen() {
   const isFound = object.tipo_aviso === 'encontre';
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, isDark && styles.darkScreen]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
+        <View style={[styles.header, isDark && styles.darkHeader]}>
           <Pressable onPress={() => router.back()} accessibilityLabel="Regresar">
             <Text style={styles.backArrow}>‹</Text>
           </Pressable>
-          <Text style={styles.headerTitle} numberOfLines={1}>Detalle del aviso</Text>
+          <Text style={[styles.headerTitle, isDark && styles.darkText]} numberOfLines={1}>Detalle del aviso</Text>
           <Text style={styles.headerId}>#{object.id.slice(-6).toUpperCase()}</Text>
         </View>
 
@@ -132,7 +135,7 @@ export default function ObjectDetailScreen() {
           </Pressable>
         )}
 
-        <View style={styles.sectionCard}>
+        <View style={[styles.sectionCard, isDark && styles.darkCard]}>
           <Text style={styles.sectionTitle}>ⓘ  Información del aviso</Text>
           <InfoRow label="FACULTAD O DEPENDENCIA" value={object.facultad} icon="⌂" />
           <InfoRow label="LUGAR ESPECÍFICO" value={object.lugar} icon="⌖" />
@@ -140,9 +143,9 @@ export default function ObjectDetailScreen() {
           <InfoRow label="MEDIO DE CONTACTO" value={object.contacto} icon="✉" />
         </View>
 
-        <View style={styles.sectionCard}>
+        <View style={[styles.sectionCard, isDark && styles.darkCard]}>
           <Text style={styles.sectionTitle}>▤  Descripción del objeto</Text>
-          <Text style={styles.description}>{object.descripcion}</Text>
+          <Text style={[styles.description, isDark && styles.darkText]}>{object.descripcion}</Text>
         </View>
 
         {isOwner && (
@@ -187,6 +190,10 @@ function formatState(value: string) {
 
 const styles = StyleSheet.create({
   screen: { backgroundColor: '#f6f8fa', flex: 1 },
+  darkScreen: { backgroundColor: '#101820' },
+  darkHeader: { borderBottomColor: '#293845' },
+  darkCard: { backgroundColor: '#1b2933', borderColor: '#30414d' },
+  darkText: { color: '#edf4f7' },
   center: { alignItems: 'center', backgroundColor: '#f6f8fa', flex: 1, justifyContent: 'center', padding: 24 },
   content: { paddingBottom: 36, paddingHorizontal: 15 },
   header: { alignItems: 'center', flexDirection: 'row', height: 58 },

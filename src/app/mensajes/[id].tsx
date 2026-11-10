@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '../../contexts/auth-context';
 import { getConversation, getConversationMessages, sendMessage, type ChatMessage, type ConversationSummary } from '../../database';
+import { useAppTheme } from '../../contexts/theme-context';
 
 export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -12,6 +13,8 @@ export default function ConversationScreen() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const { session } = useAuth();
+  const { colorScheme } = useAppTheme();
+  const isDark = colorScheme === 'dark';
   const router = useRouter();
 
   const loadConversation = useCallback(async () => {
@@ -53,7 +56,7 @@ export default function ConversationScreen() {
   };
 
   if (loading || !conversation) {
-    return <View style={styles.center}><ActivityIndicator size="large" color="#0b466d" /></View>;
+    return <View style={[styles.center, isDark && styles.darkScreen]}><ActivityIndicator size="large" color="#6eb6df" /></View>;
   }
 
   const otherName = conversation.owner_id === session?.id
@@ -62,20 +65,20 @@ export default function ConversationScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.screen}
+      style={[styles.screen, isDark && styles.darkScreen]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={0}>
-      <View style={styles.header}>
+      <View style={[styles.header, isDark && styles.darkHeader]}>
         <Pressable onPress={() => router.back()} accessibilityLabel="Regresar"><Text style={styles.back}>‹</Text></Pressable>
-        <Text style={styles.headerTitle}>Conversación</Text>
+        <Text style={[styles.headerTitle, isDark && styles.darkText]}>Conversación</Text>
         <View style={styles.headerSpace} />
       </View>
-      <View style={styles.objectCard}>
+      <View style={[styles.objectCard, isDark && styles.darkCard]}>
         {conversation.imagen_url ? <Image source={{ uri: conversation.imagen_url }} style={styles.objectImage} /> : <View style={styles.objectPlaceholder}><Text style={styles.placeholderText}>✦</Text></View>}
         <View style={styles.objectText}>
           <Text style={styles.objectLabel}>Sobre el reporte</Text>
-          <Text style={styles.objectTitle} numberOfLines={1}>{conversation.titulo}</Text>
-          <Text style={styles.person}>Conversando con {otherName}</Text>
+          <Text style={[styles.objectTitle, isDark && styles.darkText]} numberOfLines={1}>{conversation.titulo}</Text>
+          <Text style={[styles.person, isDark && styles.darkMutedText]}>Conversando con {otherName}</Text>
         </View>
       </View>
       <ScrollView
@@ -87,16 +90,16 @@ export default function ConversationScreen() {
         {messages.map((message) => {
           const mine = message.sender_id === session?.id;
           return (
-            <View key={message.id} style={[styles.bubble, mine ? styles.myBubble : styles.theirBubble]}>
-              <Text style={[styles.messageText, mine && styles.myMessageText]}>{message.body}</Text>
+            <View key={message.id} style={[styles.bubble, mine ? styles.myBubble : styles.theirBubble, !mine && isDark && styles.darkTheirBubble]}>
+              <Text style={[styles.messageText, !mine && isDark && styles.darkText, mine && styles.myMessageText]}>{message.body}</Text>
               <Text style={[styles.messageTime, mine && styles.myMessageTime]}>{formatTime(message.created_at)}</Text>
             </View>
           );
         })}
       </ScrollView>
-      <View style={styles.composer}>
+      <View style={[styles.composer, isDark && styles.darkComposer]}>
         <TextInput
-          style={styles.input}
+          style={[styles.input, isDark && styles.darkInput]}
           value={body}
           onChangeText={setBody}
           placeholder="Escribe un mensaje..."
@@ -119,6 +122,13 @@ function formatTime(value: string) {
 
 const styles = StyleSheet.create({
   screen: { backgroundColor: '#f6f8fa', flex: 1 },
+  darkScreen: { backgroundColor: '#101820' },
+  darkHeader: { borderBottomColor: '#293845' },
+  darkCard: { backgroundColor: '#1b2933', borderColor: '#30414d' },
+  darkComposer: { backgroundColor: '#1b2933', borderTopColor: '#30414d' },
+  darkInput: { backgroundColor: '#26343e', color: '#edf4f7' },
+  darkText: { color: '#edf4f7' },
+  darkMutedText: { color: '#aebbc4' },
   center: { alignItems: 'center', backgroundColor: '#f6f8fa', flex: 1, justifyContent: 'center' },
   header: { alignItems: 'center', borderBottomColor: '#e5eaee', borderBottomWidth: 1, flexDirection: 'row', height: 58, paddingHorizontal: 15 },
   back: { color: '#071a2f', fontSize: 38, lineHeight: 38, paddingRight: 16 },
@@ -138,6 +148,7 @@ const styles = StyleSheet.create({
   bubble: { borderRadius: 16, marginBottom: 10, maxWidth: '82%', padding: 11 },
   myBubble: { alignSelf: 'flex-end', backgroundColor: '#0b466d' },
   theirBubble: { alignSelf: 'flex-start', backgroundColor: '#fff', borderColor: '#e1e6ea', borderWidth: 1 },
+  darkTheirBubble: { backgroundColor: '#1b2933', borderColor: '#405361' },
   messageText: { color: '#263440', fontSize: 15, lineHeight: 21 },
   myMessageText: { color: '#fff' },
   messageTime: { color: '#8b9aaa', fontSize: 10, marginTop: 4, textAlign: 'right' },
